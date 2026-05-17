@@ -164,8 +164,10 @@ const compiledCreatorVaultContract = CompiledContract.make<CreatorVaultContract>
 // 浏览器部署时，ZK keys / zkir 不能从本机文件系统读。
 // 所以我们把 artifact 放在 public/creator-vault 下，通过 HTTP fetch 给 SDK。
 function createZkConfigProvider() {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
   return new FetchZkConfigProvider<CreatorVaultCircuitKeys>(
-    `${window.location.origin}/creator-vault`,
+    `${window.location.origin}${basePath}/creator-vault`,
     fetch.bind(window),
   )
 }
