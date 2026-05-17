@@ -11,7 +11,7 @@ import {
   type MidnightProviders,
   type UnboundTransaction,
 } from "@midnight-ntwrk/midnight-js-types"
-import { deployContract } from "@midnight-ntwrk/midnight-js-contracts"
+import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts"
 import {
   Binding,
   FinalizedTransaction,
@@ -22,6 +22,7 @@ import {
 } from "@midnight-ntwrk/ledger-v8"
 import * as CreatorVault from "@/contracts/managed/creator-vault/contract/index.js"
 import { createInMemoryPrivateStateProvider } from "@/lib/midnight/in-memory-private-state-provider"
+import type { IncomeProofSubmission } from "@/lib/midnight/proof-submission"
 
 type CreatorVaultContract = CreatorVault.Contract<undefined>
 type CreatorVaultCircuitKeys = "submitIncomeProof"
@@ -47,6 +48,21 @@ export type CreatorVaultDeploymentProgress = {
 
 export type CreatorVaultDeploymentOptions = {
   onProgress?: (progress: CreatorVaultDeploymentProgress) => void
+}
+
+export const creatorVaultPreprodDeployment = {
+  contractAddress:
+    "799d2a5a63fd3abcb8c6b892d7e46d234db66b3570e07092a78372ea96720774",
+  txId: "005dae86d1b76d11dcbf9391cb10d41302dd6f60ad41d91744c661a48c90d5dd11",
+  blockHeight: 798723,
+} as const
+
+export type CreatorVaultProofSubmissionResult = {
+  contractAddress: string
+  txId: string
+  txHash: string
+  blockHeight: number
+  proofKey: string
 }
 
 function serializeUnknownError(error: unknown): unknown {
@@ -334,5 +350,60 @@ export async function deployCreatorVaultContract(
     contractAddress: publicDeployData.contractAddress,
     txId: publicDeployData.txId,
     blockHeight: publicDeployData.blockHeight,
+  }
+}
+
+export async function submitIncomeProofToCreatorVault(
+  connected: ConnectedAPI,
+  submission: IncomeProofSubmission,
+  options: CreatorVaultDeploymentOptions = {},
+): Promise<CreatorVaultProofSubmissionResult> {
+  const providers = await createProviders(connected, options)
+
+  options.onProgress?.({
+    step: "接入已部署 CreatorVault 合约",
+    detail: `contractAddress=${creatorVaultPreprodDeployment.contractAddress}`,
+  })
+  const deployed = await findDeployedContract<CreatorVaultContract>(providers, {
+    compiledContract: compiledCreatorVaultContract,
+    contractAddress: creatorVaultPreprodDeployment.contractAddress,
+  })
+
+  options.onProgress?.({
+    step: "生成 submitIncomeProof 电路交易",
+    detail: [
+      `schemaVersion=${submission.proofSchemaVersion}`,
+      `incomeThresholdUsdCents=${submission.incomeThresholdUsdCents}`,
+      `supporterThreshold=${submission.supporterThreshold}`,
+    ].join("\n"),
+  })
+
+  const txData = await deployed.callTx.submitIncomeProof(
+    submission.creatorIdHash,
+    submission.periodHash,
+    submission.proofSchemaVersion,
+    submission.incomeThresholdUsdCents,
+    submission.supporterThreshold,
+    submission.proofCommitment,
+  )
+
+  const proofKey = toHex(txData.private.result)
+
+  options.onProgress?.({
+    step: "proof 结果已登记到 Midnight Preprod",
+    detail: [
+      `txId=${txData.public.txId}`,
+      `txHash=${txData.public.txHash}`,
+      `blockHeight=${txData.public.blockHeight}`,
+      `proofKey=${proofKey}`,
+    ].join("\n"),
+  })
+
+  return {
+    contractAddress: creatorVaultPreprodDeployment.contractAddress,
+    txId: txData.public.txId,
+    txHash: txData.public.txHash,
+    blockHeight: txData.public.blockHeight,
+    proofKey,
   }
 }
