@@ -12,6 +12,7 @@
     "proof-server:up": "docker compose -f proof-server.yml up -d",
     "proof-server:down": "docker compose -f proof-server.yml down",
     "proof-server:logs": "docker compose -f proof-server.yml logs -f proof-server",
+    "deepseek-report:server": "node server/deepseek-report-server.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

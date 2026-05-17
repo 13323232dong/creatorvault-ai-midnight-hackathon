@@ -15,10 +15,13 @@ export function AiReportPanel({ report }: { report: AIReport }) {
       <div className="flex items-center gap-2">
         <Sparkles className="text-[var(--gold)]" size={20} />
         <p className="text-xs font-semibold uppercase text-[var(--moss)]">
-          {t("aiReportLabel")}
+          {report.source === "deepseek-v4" ? "DeepSeek V4 Report" : t("aiReportLabel")}
         </p>
       </div>
       <h2 className="mt-3 text-xl font-semibold">{report.title}</h2>
+      {report.model ? (
+        <p className="mt-2 text-xs text-[var(--muted)]">model: {report.model}</p>
+      ) : null}
       <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
         {report.summary}
       </p>

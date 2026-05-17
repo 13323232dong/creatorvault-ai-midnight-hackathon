@@ -17,4 +17,8 @@ export type AIReport = {
   bullets: string[]
   // 生成时间。
   generatedAt: string
+  // 报告来源。真实模型不可用时允许回退到本地规则生成。
+  source?: "deepseek-v4" | "local-fallback"
+  // 实际生成使用的模型名。
+  model?: string
 }

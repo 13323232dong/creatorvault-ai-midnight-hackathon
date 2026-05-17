@@ -8,6 +8,10 @@ import { useMidnightWallet } from "@/components/MidnightWalletProvider"
 import { ProofCard } from "@/components/ProofCard"
 import { demoCreator, demoSponsorshipRecords } from "@/lib/demo-data"
 import {
+  createPrivacySafeReportRequest,
+  generateDeepSeekReports,
+} from "@/lib/deepseek-report-client"
+import {
   creatorVaultPreprodDeployment,
   submitIncomeProofToCreatorVault,
   type CreatorVaultDeploymentProgress,
@@ -24,7 +28,8 @@ import type { AIReport, ReportAudience } from "@/types/report"
 type ReportGenerationState =
   | { status: "idle" }
   | { status: "generating" }
-  | { status: "generated"; reports: AIReport[] }
+  | { status: "generated"; reports: AIReport[]; source: string; model: string }
+  | { status: "failed"; message: string; reports: AIReport[] }
 
 type ChainSubmissionState =
   | { status: "idle" }
@@ -32,7 +37,7 @@ type ChainSubmissionState =
   | { status: "submitted"; result: CreatorVaultProofSubmissionResult }
   | { status: "failed"; message: string }
 
-const audiences: ReportAudience[] = ["brand", "dao", "community"]
+const audiences: ReportAudience[] = ["brand"]
 
 function hasPositiveDust(balance?: string) {
   if (!balance) {
@@ -97,12 +102,29 @@ export default function ReportPage() {
   async function handleGenerateReports() {
     setReportState({ status: "generating" })
 
-    await new Promise((resolve) => window.setTimeout(resolve, 650))
+    const fallbackReports = audiences.map((audience) =>
+      generateReport(proof, audience, language),
+    )
 
-    setReportState({
-      status: "generated",
-      reports: audiences.map((audience) => generateReport(proof, audience, language)),
-    })
+    try {
+      const result = await generateDeepSeekReports(
+        createPrivacySafeReportRequest(proof, audiences, language),
+      )
+
+      setReportState({
+        status: "generated",
+        reports: result.reports,
+        source: result.source,
+        model: result.model,
+      })
+    } catch (reportError) {
+      console.error("DeepSeek report generation failed", reportError)
+      setReportState({
+        status: "failed",
+        message: formatError(reportError),
+        reports: fallbackReports,
+      })
+    }
   }
 
   async function handleSubmitProof() {
@@ -184,13 +206,13 @@ export default function ReportPage() {
                 ) : (
                   <FileText size={17} />
                 )}
-                {reportState.status === "generating"
-                  ? language === "zh"
-                    ? "生成中"
-                    : "Generating"
+                  {reportState.status === "generating"
+                    ? language === "zh"
+                      ? "生成中"
+                      : "Generating"
                   : language === "zh"
-                    ? "生成 AI 报告"
-                    : "Generate AI reports"}
+                    ? "用 DeepSeek V4 生成"
+                    : "Generate with DeepSeek V4"}
               </button>
             </div>
 
@@ -223,12 +245,33 @@ export default function ReportPage() {
           {reportState.status === "idle" ? (
             <section className="border border-dashed border-[var(--line)] bg-[#fbfcf8] p-5 text-sm leading-6 text-[var(--muted)]">
               {language === "zh"
-                ? "点击上方按钮后，会生成品牌、DAO 和社区三种报告口径。"
-                : "Click the button above to generate brand, DAO, and community report variants."}
+                ? "点击上方按钮后，会通过服务端 DeepSeek V4 代理生成品牌审核报告。"
+                : "Click the button above to generate a brand-review report through the server-side DeepSeek V4 proxy."}
+            </section>
+          ) : null}
+
+          {reportState.status === "generated" ? (
+            <section className="border border-[#b8d6bd] bg-[#f0f8f1] p-4 text-sm leading-6 text-[var(--forest)]">
+              {language === "zh"
+                ? `报告来源：${reportState.source} / ${reportState.model}`
+                : `Report source: ${reportState.source} / ${reportState.model}`}
+            </section>
+          ) : null}
+
+          {reportState.status === "failed" ? (
+            <section className="border border-[#d8c9a6] bg-[#fff8e3] p-4 text-sm leading-6 text-[#6d5526]">
+              {language === "zh"
+                ? `DeepSeek 生成暂时不可用，已回退到本地隐私安全报告。原因：${reportState.message}`
+                : `DeepSeek generation is temporarily unavailable. Using local privacy-safe fallback. Reason: ${reportState.message}`}
             </section>
           ) : null}
 
           {reportState.status === "generated"
+            ? reportState.reports.map((report) => (
+                <AiReportPanel key={report.id} report={report} />
+              ))
+            : null}
+          {reportState.status === "failed"
             ? reportState.reports.map((report) => (
                 <AiReportPanel key={report.id} report={report} />
               ))

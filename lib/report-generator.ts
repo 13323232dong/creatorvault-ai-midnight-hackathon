@@ -88,5 +88,6 @@ export function generateReport(
     summary,
     bullets,
     generatedAt: proof.generatedAt,
+    source: "local-fallback",
   }
 }
