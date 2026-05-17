@@ -1,0 +1,96 @@
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// 这个合约是 CreatorVault 的第一版链上状态层。
+// 它现在只做“proof 公开结果登记”，不保存私密赞助账本。
+// 真正的私密 records / witness 后面应该留在本地或 Midnight 隐私 proof 流程里。
+export ledger proofCount: Counter;
+
+// latest* 字段先保存最近一次提交的公开 proof 状态。
+// 这是最小 MVP 版本，方便先跑通部署和读取。
+// 未来升级时应该改成 proofKey -> ProofRecord 的集合/索引结构。
+export ledger latestProofKey: Bytes<32>;
+export ledger latestCreatorIdHash: Bytes<32>;
+export ledger latestPeriodHash: Bytes<32>;
+export ledger latestProofSchemaVersion: Uint<16>;
+export ledger latestIncomeThresholdUsdCents: Uint<64>;
+export ledger latestSupporterThreshold: Uint<32>;
+export ledger latestProofCommitment: Bytes<32>;
+
+constructor() {
+  // Counter 没有直接赋值，用 increment(0) 初始化语义更贴近官方 example。
+  proofCount.increment(0);
+
+  // 空值使用带命名空间的 pad 字符串，避免和真实 proof commitment 混淆。
+  latestProofKey = pad(32, "creatorvault:empty:proof-key");
+  latestCreatorIdHash = pad(32, "creatorvault:empty:creator");
+  latestPeriodHash = pad(32, "creatorvault:empty:period");
+  latestProofSchemaVersion = 0;
+  latestIncomeThresholdUsdCents = 0;
+  latestSupporterThreshold = 0;
+  latestProofCommitment = pad(32, "creatorvault:empty:commit");
+}
+
+// submitIncomeProof 是当前第一版“智能合约入口”。
+// 前端/部署脚本未来会把 verifier 已认可的 public outputs 提交进来。
+// 注意：这里暂时还没有真实 ZK verifier，下一步会补 MockVerifier / proof 流程。
+export circuit submitIncomeProof(
+  creatorIdHash: Bytes<32>,
+  periodHash: Bytes<32>,
+  proofSchemaVersion: Uint<16>,
+  incomeThresholdUsdCents: Uint<64>,
+  supporterThreshold: Uint<32>,
+  proofCommitment: Bytes<32>
+): Bytes<32> {
+  // 这些 assert 是链上登记前的基础防御：
+  // 不允许空版本、空门槛、空 commitment 进入公开状态。
+  assert(proofSchemaVersion > 0, "Invalid proof schema version");
+  assert(incomeThresholdUsdCents > 0, "Income threshold must be positive");
+  assert(supporterThreshold > 0, "Supporter threshold must be positive");
+  assert(proofCommitment != pad(32, "creatorvault:empty:commit"), "Invalid proof commitment");
+
+  // proofKey 是这条公开 proof 记录的身份指纹。
+  // 它由创作者、周期、proof 版本、门槛和 commitment 共同决定。
+  const proofKey = computeProofKey(
+    creatorIdHash,
+    periodHash,
+    proofSchemaVersion,
+    incomeThresholdUsdCents,
+    supporterThreshold,
+    proofCommitment
+  );
+
+  // disclose(...) 表示这些值会进入公开 ledger 状态。
+  // 因此这里绝对不能放 sponsorAddress、单笔金额、完整账本。
+  latestProofKey = disclose(proofKey);
+  latestCreatorIdHash = disclose(creatorIdHash);
+  latestPeriodHash = disclose(periodHash);
+  latestProofSchemaVersion = disclose(proofSchemaVersion);
+  latestIncomeThresholdUsdCents = disclose(incomeThresholdUsdCents);
+  latestSupporterThreshold = disclose(supporterThreshold);
+  latestProofCommitment = disclose(proofCommitment);
+  proofCount.increment(1);
+
+  return proofKey;
+}
+
+// computeProofKey 是一个公开可复算的 key 生成规则。
+// 前端、indexer、报告页和合约都应该对 proofKey 的含义保持一致。
+export circuit computeProofKey(
+  creatorIdHash: Bytes<32>,
+  periodHash: Bytes<32>,
+  proofSchemaVersion: Uint<16>,
+  incomeThresholdUsdCents: Uint<64>,
+  supporterThreshold: Uint<32>,
+  proofCommitment: Bytes<32>
+): Bytes<32> {
+  return persistentHash<Vector<6, Bytes<32>>>([
+    creatorIdHash,
+    periodHash,
+    proofSchemaVersion as Field as Bytes<32>,
+    incomeThresholdUsdCents as Field as Bytes<32>,
+    supporterThreshold as Field as Bytes<32>,
+    proofCommitment
+  ]);
+}

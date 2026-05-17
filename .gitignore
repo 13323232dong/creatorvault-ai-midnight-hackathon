@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+dist/
+build/
+.next/
+out/
+.env
+.env.*
+!.env.example
+coverage/
+cache/
+artifacts/
+broadcast/
+typechain-types/
+*.log
+*.tsbuildinfo

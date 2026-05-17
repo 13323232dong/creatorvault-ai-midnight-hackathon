@@ -1,0 +1,46 @@
+{
+  "name": "creatorvault-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compact:creator-vault": "compact compile contracts/src/creator_vault.compact contracts/managed/creator-vault",
+    "local:check": "npm run compact:creator-vault && npm run typecheck",
+    "localnet:up": "cd /Users/mac/web3-tools/midnight-playground && docker compose up -d",
+    "localnet:down": "cd /Users/mac/web3-tools/midnight-playground && docker compose down",
+    "localnet:status": "cd /Users/mac/web3-tools/midnight-playground && docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
+    "dev": "next dev",
+    "proof-server:up": "docker compose -f proof-server.yml up -d",
+    "proof-server:down": "docker compose -f proof-server.yml down",
+    "proof-server:logs": "docker compose -f proof-server.yml logs -f proof-server",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-js": "^2.5.0",
+    "@midnight-ntwrk/compact-runtime": "^0.16.0",
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
+    "@midnight-ntwrk/ledger-v8": "^8.0.3",
+    "@midnight-ntwrk/midnight-js-contracts": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-types": "^4.0.4",
+    "@midnight-ntwrk/wallet-sdk-address-format": "^3.1.1",
+    "@tailwindcss/postcss": "^4.1.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.0",
+    "viem": "^2.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
