@@ -58,6 +58,41 @@ export default function SponsorPage() {
     setIsPrivate(true)
   }
 
+  function handleClearRecords() {
+    persist([])
+  }
+
+  function handleSeedRecords() {
+    const seededRecords = [
+      createSponsorshipRecord({
+        sponsorLabel: "Brand Partner A",
+        sponsorAddress: "invoice-001",
+        amountUsd: 320,
+        isPrivate: true,
+      }),
+      createSponsorshipRecord({
+        sponsorLabel: "Builder DAO",
+        sponsorAddress: "grant-042",
+        amountUsd: 280,
+        isPrivate: false,
+      }),
+      createSponsorshipRecord({
+        sponsorLabel: "Newsletter Sponsor",
+        sponsorAddress: "invoice-002",
+        amountUsd: 460,
+        isPrivate: true,
+      }),
+      createSponsorshipRecord({
+        sponsorLabel: "Community Backer",
+        sponsorAddress: "receipt-114",
+        amountUsd: 180,
+        isPrivate: false,
+      }),
+    ]
+
+    persist(seededRecords)
+  }
+
   function handleRemoveRecord(recordId: string) {
     persist(records.filter((record) => record.id !== recordId))
   }
@@ -114,6 +149,7 @@ export default function SponsorPage() {
             className="mt-2 w-full border border-[var(--line)] bg-[#f8faf5] px-3 py-3"
             inputMode="decimal"
             onChange={(event) => setAmountUsd(event.target.value)}
+            onFocus={(event) => event.target.select()}
             value={amountUsd}
           />
 
@@ -150,6 +186,23 @@ export default function SponsorPage() {
             <Plus size={17} />
             {language === "zh" ? "加入私密账本" : "Add to private ledger"}
           </button>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              className="border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-[var(--forest)]"
+              onClick={handleSeedRecords}
+              type="button"
+            >
+              {language === "zh" ? "填充 4 条测试记录" : "Fill 4 test records"}
+            </button>
+            <button
+              className="border border-[#d8b8a6] bg-white px-4 py-3 text-sm font-semibold text-[var(--clay)]"
+              onClick={handleClearRecords}
+              type="button"
+            >
+              {language === "zh" ? "清空账本" : "Clear ledger"}
+            </button>
+          </div>
 
           <div className="mt-5 border border-[var(--line)] bg-[#fbfcf8] p-4">
             <p className="text-sm font-semibold text-[var(--ink)]">
