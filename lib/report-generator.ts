@@ -64,19 +64,19 @@ export function generateReport(
 
   const summary =
     language === "zh"
-      ? `Alice 在 ${period} 已通过所选收入和支持者门槛。该报告帮助${copy.target}${copy.action}，同时不暴露赞助者身份、精确付款金额或完整私密收入账本。`
-      : `Alice passed the selected income and supporter thresholds for ${period}. This report helps ${copy.target} ${copy.action} without exposing sponsor identities, exact payments, or the full private revenue ledger.`
+      ? `Alice Chen 在 ${period} 的创作者收入与支持者数量已通过 CreatorVault 验证。品牌或资助方可以把这份报告作为合作前的可信收入证明，同时无需看到赞助者名单、单笔付款或完整私密账本。`
+      : `Alice Chen's creator income and supporter count for ${period} have been verified by CreatorVault. Brands and funding partners can use this as a trustworthy partnership-readiness report without seeing sponsor lists, individual payments, or the private revenue ledger.`
   const bullets =
     language === "zh"
       ? [
-          "收入门槛已验证，同时不披露单笔精确付款。",
-          "支持者门槛已验证，同时不暴露私密赞助者身份。",
-          "公开结果适合审核使用，并保护创作者与赞助者隐私。",
+          "结论：Alice 已达到本期收入门槛，具备商业合作或资助审核的基础可信度。",
+          "社区信号：支持者数量达到要求，说明收入不是单一来源偶然事件。",
+          "隐私保护：报告只展示验证结论，不公开赞助者身份、地址或单笔金额。",
         ]
       : [
-          "Income threshold verified without disclosing exact individual payments.",
-          "Supporter threshold verified without revealing private sponsor identities.",
-          "The disclosed result is suitable for review while preserving creator and sponsor privacy.",
+          "Conclusion: Alice meets the income threshold for this period and is ready for partnership or funding review.",
+          "Community signal: The supporter threshold is also met, showing the revenue is not a one-off payment from a single source.",
+          "Privacy protection: The report shares the verification result without revealing sponsor identities, addresses, or individual payment amounts.",
         ]
 
   // 返回结构化报告，UI 可以直接渲染。

@@ -164,18 +164,65 @@ export default function ReportPage() {
     <div className="container py-10">
       <div className="max-w-3xl">
         <p className="text-sm font-semibold uppercase text-[var(--moss)]">
-          {t("reportBadge")}
+          {language === "zh" ? "品牌合作收入证明" : "Brand Partnership Income Report"}
         </p>
         <h1 className="mt-3 text-4xl font-semibold">
-          {t("reportTitle")}
+          {language === "zh"
+            ? "给品牌看的可信创作者收入报告"
+            : "A Trustworthy Creator Income Report for Brands"}
         </h1>
         <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-          {t("reportBody")}
+          {language === "zh"
+            ? "CreatorVault 帮创作者证明“我确实达到收入和支持者门槛”，但不把赞助者名单、单笔金额和完整账本暴露给品牌。"
+            : "CreatorVault helps creators prove they meet income and supporter thresholds without exposing sponsor lists, individual payments, or the full private ledger."}
         </p>
       </div>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[480px_1fr]">
-        <ProofCard proof={proof} />
+        <section className="border border-[var(--line)] bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase text-[var(--moss)]">
+            {language === "zh" ? "本期结论" : "This Period"}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold text-[var(--ink)]">
+            {language === "zh" ? "Alice 已通过收入可信度验证" : "Alice Passed Income Credibility Verification"}
+          </h2>
+          <div className="mt-5 grid gap-3">
+            <div className="border border-[var(--line)] bg-[#f8faf5] p-4">
+              <p className="text-xs text-[var(--muted)]">
+                {language === "zh" ? "验证结果" : "Verification Result"}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-[var(--forest)]">
+                {language === "zh" ? "达到 $1,000+ 收入门槛" : "Meets $1,000+ income threshold"}
+              </p>
+            </div>
+            <div className="border border-[var(--line)] bg-[#f8faf5] p-4">
+              <p className="text-xs text-[var(--muted)]">
+                {language === "zh" ? "社区支持" : "Community Support"}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-[var(--forest)]">
+                {language === "zh" ? "达到 4+ 支持者门槛" : "Meets 4+ supporter threshold"}
+              </p>
+            </div>
+            <div className="border border-[#d8c9a6] bg-[#fff8e3] p-4">
+              <p className="text-xs font-semibold text-[#6d5526]">
+                {language === "zh" ? "不会公开" : "Not Shared"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[#6d5526]">
+                {language === "zh"
+                  ? "赞助者身份、钱包地址、每笔付款金额、完整私密收入账本。"
+                  : "Sponsor identities, wallet addresses, individual payment amounts, and the full private income ledger."}
+              </p>
+            </div>
+          </div>
+          <details className="mt-5 border-t border-[var(--line)] pt-4">
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--moss)]">
+              {language === "zh" ? "查看 proof 卡片" : "View Proof Card"}
+            </summary>
+            <div className="mt-4">
+              <ProofCard proof={proof} />
+            </div>
+          </details>
+        </section>
         <div className="space-y-6">
           <section className="border border-[var(--line)] bg-white p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -183,16 +230,16 @@ export default function ReportPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="text-[var(--gold)]" size={20} />
                   <p className="text-xs font-semibold uppercase text-[var(--moss)]">
-                    AI Report Generator
+                    {language === "zh" ? "AI 报告生成器" : "AI Report Generator"}
                   </p>
                 </div>
                 <h2 className="mt-3 text-xl font-semibold">
-                  {language === "zh" ? "从公开 proof 输出生成报告" : "Generate from disclosed proof outputs"}
+                  {language === "zh" ? "生成一份品牌能看懂的报告" : "Generate a brand-readable report"}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                   {language === "zh"
-                    ? "AI 只读取通过状态、门槛、周期和 proof commitment；赞助者身份、单笔金额和完整私密账本不会进入报告输入。"
-                    : "The AI only reads pass status, thresholds, period, and proof commitment. Sponsor identities, individual payments, and the private ledger stay out of the prompt."}
+                    ? "DeepSeek V4 会把验证结果写成品牌审核语言。它只知道“是否通过、门槛、周期和证明承诺值”，不知道任何私密赞助明细。"
+                    : "DeepSeek V4 turns the verification result into brand-review language. It only receives pass status, thresholds, period, and proof commitment, not private sponsorship details."}
                 </p>
               </div>
               <button
@@ -216,30 +263,35 @@ export default function ReportPage() {
               </button>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <div className="border border-[var(--line)] bg-[#f8faf5] p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
-                  <CheckCircle2 size={16} />
-                  {language === "zh" ? "允许输入 AI" : "Allowed AI inputs"}
+            <details className="mt-5 border border-[var(--line)] bg-[#fbfcf8] p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--ink)]">
+                {language === "zh" ? "AI 看到/看不到什么" : "What AI Can and Cannot See"}
+              </summary>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="border border-[var(--line)] bg-white p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
+                    <CheckCircle2 size={16} />
+                    {language === "zh" ? "可以看到" : "Can See"}
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-[var(--muted)]">
+                    {proof.disclosedFields.map((field) => (
+                      <li key={field}>{field}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="mt-3 space-y-2 text-sm text-[var(--muted)]">
-                  {proof.disclosedFields.map((field) => (
-                    <li key={field}>{field}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="border border-[var(--line)] bg-[#fff8e8] p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
-                  <LockKeyhole size={16} />
-                  {language === "zh" ? "禁止输入 AI" : "Blocked AI inputs"}
+                <div className="border border-[var(--line)] bg-[#fff8e8] p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
+                    <LockKeyhole size={16} />
+                    {language === "zh" ? "不能看到" : "Cannot See"}
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-[var(--muted)]">
+                    {proof.hiddenFields.map((field) => (
+                      <li key={field}>{field}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="mt-3 space-y-2 text-sm text-[var(--muted)]">
-                  {proof.hiddenFields.map((field) => (
-                    <li key={field}>{field}</li>
-                  ))}
-                </ul>
               </div>
-            </div>
+            </details>
           </section>
 
           {reportState.status === "idle" ? (
@@ -287,12 +339,12 @@ export default function ReportPage() {
               Midnight Preprod Registry
             </div>
             <h2 className="mt-5 text-2xl font-semibold text-[var(--ink)]">
-              {language === "zh" ? "把 demo proof 结果登记到已部署合约" : "Submit the demo proof result to the deployed contract"}
+              {language === "zh" ? "链上存证状态" : "On-chain Record Status"}
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
               {language === "zh"
-                ? "这一步不会上传原始赞助流水，只把公开 proof 输出转换成 Compact 电路参数，并调用 submitIncomeProof。"
-                : "This step does not upload raw sponsorship records. It converts disclosed proof outputs into Compact circuit arguments and calls submitIncomeProof."}
+                ? "合约已经部署到 Midnight Preprod。下一步可把这份报告对应的 proof 结果登记到合约里，形成公开可查的验证记录。"
+                : "The contract is already deployed on Midnight Preprod. The next step can register this report's proof result into the contract as a public verification record."}
             </p>
           </div>
           <button
@@ -315,6 +367,10 @@ export default function ReportPage() {
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
           <div className="border border-[var(--line)] bg-[#fbfcf8] p-4">
             <p className="text-sm font-semibold text-[var(--ink)]">Contract</p>
+            <div className="mt-3 inline-flex items-center gap-2 bg-[#e6efe2] px-3 py-2 text-xs font-semibold text-[var(--forest)]">
+              <CheckCircle2 size={14} />
+              {language === "zh" ? "已部署到 Midnight Preprod" : "Deployed on Midnight Preprod"}
+            </div>
             <p className="mono mt-3 break-all text-xs text-[var(--muted)]">
               {creatorVaultPreprodDeployment.contractAddress}
             </p>
@@ -354,14 +410,22 @@ export default function ReportPage() {
 
         {!canSubmitToChain ? (
           <div className="mt-5 border border-[#d8c9a6] bg-[#fff8e3] p-4 text-sm leading-6 text-[#6d5526]">
-            请连接 Lace，确认网络为 preprod，并确保钱包里有 tDUST 后再提交。
+            {language === "zh"
+              ? "合约已经部署上链。这里连接 Lace 只是为了下一步把本页 demo proof 结果提交到这个已部署合约。请确认网络为 preprod，并确保钱包里有 tDUST。"
+              : "The contract is already deployed. Connect Lace here only for the next step: submitting this page's demo proof result to the deployed contract. Use preprod and keep tDUST available."}
             <button
               className="ml-3 border border-[#9b7b32] px-3 py-1 font-semibold text-[#6d5526]"
               disabled={isAutoConnecting}
               onClick={() => void connectWallet("auto")}
               type="button"
             >
-              {isAutoConnecting ? "连接中" : "自动连接"}
+              {isAutoConnecting
+                ? language === "zh"
+                  ? "连接中"
+                  : "Connecting"
+                : language === "zh"
+                  ? "连接 Lace 提交 proof"
+                  : "Connect Lace to submit proof"}
             </button>
           </div>
         ) : null}
