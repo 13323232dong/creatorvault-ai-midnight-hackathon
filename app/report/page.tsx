@@ -1,12 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { CheckCircle2, FileText, Loader2, LockKeyhole, RadioTower, Sparkles, WalletCards } from "lucide-react"
 import { AiReportPanel } from "@/components/AiReportPanel"
 import { useLanguage } from "@/components/LanguageProvider"
 import { useMidnightWallet } from "@/components/MidnightWalletProvider"
 import { ProofCard } from "@/components/ProofCard"
-import { demoCreator, demoSponsorshipRecords } from "@/lib/demo-data"
+import { demoCreator } from "@/lib/demo-data"
+import {
+  createVerificationCertificate,
+  writeVerificationCertificate,
+} from "@/lib/certificate"
 import {
   createPrivacySafeReportRequest,
   generateDeepSeekReports,
@@ -23,7 +28,9 @@ import {
 } from "@/lib/midnight/proof-submission"
 import { generateIncomeProof } from "@/lib/proof-engine"
 import { generateReport } from "@/lib/report-generator"
+import { readSponsorshipRecords } from "@/lib/sponsorship-ledger"
 import type { AIReport, ReportAudience } from "@/types/report"
+import type { SponsorshipRecord } from "@/types/sponsorship"
 
 type ReportGenerationState =
   | { status: "idle" }
@@ -67,6 +74,7 @@ function formatError(error: unknown): string {
 export default function ReportPage() {
   const { language, t } = useLanguage()
   const { connection, connectWallet, error, isAutoConnecting } = useMidnightWallet()
+  const [records, setRecords] = useState<SponsorshipRecord[]>([])
   const [reportState, setReportState] = useState<ReportGenerationState>({
     status: "idle",
   })
@@ -77,9 +85,12 @@ export default function ReportPage() {
     CreatorVaultDeploymentProgress[]
   >([])
 
-  // 先根据 demo 收入记录生成证明。
+  useEffect(() => {
+    setRecords(readSponsorshipRecords())
+  }, [])
+
   const proof = generateIncomeProof({
-    records: demoSponsorshipRecords,
+    records,
     thresholdUsd: 1000,
     supporterThreshold: 4,
     period: demoCreator.reportPeriod,
@@ -149,6 +160,13 @@ export default function ReportPage() {
         },
       )
 
+      writeVerificationCertificate(
+        createVerificationCertificate({
+          creatorName: demoCreator.name,
+          proof,
+          submission: result,
+        }),
+      )
       setSubmissionState({ status: "submitted", result })
     } catch (submitError) {
       console.error("CreatorVault proof submission failed", submitError)
@@ -178,13 +196,38 @@ export default function ReportPage() {
         </p>
       </div>
 
+      {records.length === 0 ? (
+        <section className="mt-8 border border-[#d8c9a6] bg-[#fff8e3] p-6 text-sm leading-6 text-[#6d5526]">
+          <h2 className="text-xl font-semibold text-[#6d5526]">
+            {language === "zh" ? "还没有真实赞助记录" : "No real sponsorship records yet"}
+          </h2>
+          <p className="mt-3">
+            {language === "zh"
+              ? "请先去 Sponsor 页录入真实赞助记录。报告页不会再使用样例假数据；没有私密账本输入，就不会生成通过证明。"
+              : "Go to the Sponsor page first and add real sponsorship records. The report page no longer uses sample fake data; without private ledger inputs, it will not generate a passing proof."}
+          </p>
+          <Link
+            className="mt-4 inline-flex bg-[var(--forest)] px-4 py-3 font-semibold text-white"
+            href="/sponsor"
+          >
+            {language === "zh" ? "去录入赞助" : "Add sponsorship records"}
+          </Link>
+        </section>
+      ) : null}
+
       <section className="mt-8 grid gap-6 lg:grid-cols-[480px_1fr]">
         <section className="border border-[var(--line)] bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase text-[var(--moss)]">
             {language === "zh" ? "本期结论" : "This Period"}
           </p>
           <h2 className="mt-3 text-2xl font-semibold text-[var(--ink)]">
-            {language === "zh" ? "Alice 已通过收入可信度验证" : "Alice Passed Income Credibility Verification"}
+            {proof.result === "passed"
+              ? language === "zh"
+                ? "Alice 已通过收入可信度验证"
+                : "Alice Passed Income Credibility Verification"
+              : language === "zh"
+                ? "等待真实赞助记录达到门槛"
+                : "Waiting for real sponsorship records to meet thresholds"}
           </h2>
           <div className="mt-5 grid gap-3">
             <div className="border border-[var(--line)] bg-[#f8faf5] p-4">
@@ -192,7 +235,13 @@ export default function ReportPage() {
                 {language === "zh" ? "验证结果" : "Verification Result"}
               </p>
               <p className="mt-1 text-lg font-semibold text-[var(--forest)]">
-                {language === "zh" ? "达到 $1,000+ 收入门槛" : "Meets $1,000+ income threshold"}
+                {proof.result === "passed"
+                  ? language === "zh"
+                    ? `达到 $${proof.thresholdUsd.toLocaleString()}+ 收入门槛`
+                    : `Meets $${proof.thresholdUsd.toLocaleString()}+ income threshold`
+                  : language === "zh"
+                    ? `当前收入未达到 $${proof.thresholdUsd.toLocaleString()} 门槛`
+                    : `Current income is below the $${proof.thresholdUsd.toLocaleString()} threshold`}
               </p>
             </div>
             <div className="border border-[var(--line)] bg-[#f8faf5] p-4">
@@ -200,7 +249,23 @@ export default function ReportPage() {
                 {language === "zh" ? "社区支持" : "Community Support"}
               </p>
               <p className="mt-1 text-lg font-semibold text-[var(--forest)]">
-                {language === "zh" ? "达到 4+ 支持者门槛" : "Meets 4+ supporter threshold"}
+                {proof.supporterCount >= proof.supporterThreshold
+                  ? language === "zh"
+                    ? `达到 ${proof.supporterThreshold}+ 支持者门槛`
+                    : `Meets ${proof.supporterThreshold}+ supporter threshold`
+                  : language === "zh"
+                    ? `当前 ${proof.supporterCount} 位支持者，未达到 ${proof.supporterThreshold} 位门槛`
+                    : `${proof.supporterCount} supporters so far; below the ${proof.supporterThreshold} supporter threshold`}
+              </p>
+            </div>
+            <div className="border border-[var(--line)] bg-[#fbfcf8] p-4">
+              <p className="text-xs text-[var(--muted)]">
+                {language === "zh" ? "本地私密账本输入" : "Local private ledger input"}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                {language === "zh"
+                  ? `${records.length} 条真实录入记录参与计算`
+                  : `${records.length} manually entered records used`}
               </p>
             </div>
             <div className="border border-[#d8c9a6] bg-[#fff8e3] p-4">
@@ -401,8 +466,25 @@ export default function ReportPage() {
 
         <details className="mt-5 border border-[var(--line)] bg-[#fbfcf8] p-4">
           <summary className="cursor-pointer text-sm font-semibold text-[var(--ink)]">
-            {language === "zh" ? "查看本次链上参数" : "View chain arguments"}
+            {language === "zh" ? "智能合约函数 API 文档" : "Smart contract function API"}
           </summary>
+          <div className="mt-3 text-sm leading-6 text-[var(--muted)]">
+            <p>
+              {language === "zh"
+                ? "合约源码：contracts/src/creator_vault.compact；前端调用封装：lib/midnight/creator-vault-contract.ts。"
+                : "Contract source: contracts/src/creator_vault.compact; frontend wrapper: lib/midnight/creator-vault-contract.ts."}
+            </p>
+            <pre className="mono mt-3 overflow-auto whitespace-pre-wrap break-all bg-white p-4 text-xs text-[var(--muted)]">
+{`submitIncomeProof(
+  creatorIdHash: Bytes<32>,
+  periodHash: Bytes<32>,
+  proofSchemaVersion: Uint<16>,
+  incomeThresholdUsdCents: Uint<64>,
+  supporterThreshold: Uint<32>,
+  proofCommitment: Bytes<32>
+): Bytes<32>`}
+            </pre>
+          </div>
           <pre className="mono mt-3 overflow-auto whitespace-pre-wrap break-all bg-white p-4 text-xs text-[var(--muted)]">
             {JSON.stringify(submissionSummary, null, 2)}
           </pre>
@@ -472,6 +554,12 @@ export default function ReportPage() {
             <p className="break-all">交易 Hash：{submissionState.result.txHash}</p>
             <p>区块高度：{submissionState.result.blockHeight}</p>
             <p className="break-all">Proof Key：{submissionState.result.proofKey}</p>
+            <Link
+              className="mt-4 inline-flex bg-[var(--forest)] px-4 py-3 font-semibold text-white"
+              href="/certificate"
+            >
+              {language === "zh" ? "查看证书" : "View certificate"}
+            </Link>
           </div>
         ) : null}
       </section>

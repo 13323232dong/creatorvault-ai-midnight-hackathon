@@ -870,3 +870,76 @@ CreatorVault proof registry deployed on Midnight Preprod.
 - 在 demo 视频中展示 Deploy 页的“合约已部署”状态
 - 继续补一个提交 demo proof 到已部署合约的前端入口
 - 把 Report / Architecture 页和链上合约地址串成一个完整故事
+
+## 2026-05-17: 真实赞助记录 -> proof -> 合约登记 -> 证书闭环
+
+### 为什么改
+
+之前 Sponsor / Report 主流程使用 `demoSponsorshipRecords`，容易让人误解为“已经接入真实赞助”。这不适合黑客松最终演示，因为评委需要看到用户自己如何走完整流程。
+
+因此本次调整把样例数据从主流程移除：
+
+```text
+Sponsor 页手动录入真实赞助记录
+-> 记录保存在浏览器私密账本 localStorage
+-> Report 页读取这份账本生成 proof 结果
+-> 用户连接 Lace 调用已部署合约 submitIncomeProof
+-> 交易成功后生成 Certificate 页面
+```
+
+### 当前智能合约能做什么
+
+已部署的 Midnight Preprod 合约是 **proof registry**，负责登记 proof 的公开结果，不负责收款。
+
+合约源码：
+
+```text
+contracts/src/creator_vault.compact
+```
+
+前端调用封装：
+
+```text
+lib/midnight/creator-vault-contract.ts
+```
+
+核心函数 API：
+
+```text
+submitIncomeProof(
+  creatorIdHash: Bytes<32>,
+  periodHash: Bytes<32>,
+  proofSchemaVersion: Uint<16>,
+  incomeThresholdUsdCents: Uint<64>,
+  supporterThreshold: Uint<32>,
+  proofCommitment: Bytes<32>
+): Bytes<32>
+```
+
+前端实际调用：
+
+```text
+findDeployedContract(...)
+deployed.callTx.submitIncomeProof(...)
+```
+
+### 当前智能合约不能做什么
+
+当前合约没有 `sponsor()` / `pay()` / `deposit()` 这类收款函数，所以不能声称“赞助付款已经通过合约完成”。
+
+当前真实闭环的含义是：
+
+```text
+真实赞助记录由用户录入并作为本地私密 proof 输入
+链上只登记 proof 结果和 commitment
+证书引用链上 txId / proofKey / contractAddress
+```
+
+未来如果要把赞助付款也放到链上，需要新增赞助合约或扩展 CreatorVault 合约，例如：
+
+```text
+submitSponsorship(...)
+recordSponsorship(...)
+```
+
+并重新部署/迁移合约。

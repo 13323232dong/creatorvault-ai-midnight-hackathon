@@ -10,6 +10,7 @@ const navItems: Array<{ href: string; labelKey: CopyKey }> = [
   { href: "/", labelKey: "navDashboard" },
   { href: "/sponsor", labelKey: "navSponsor" },
   { href: "/report", labelKey: "navReport" },
+  { href: "/certificate", labelKey: "navCertificate" },
   { href: "/architecture", labelKey: "navArchitecture" },
   { href: "/deploy", labelKey: "navDeploy" },
 ]
